@@ -7,10 +7,10 @@ import {
 } from './ImageGalleryItem.styled';
 import PropTypes from 'prop-types';
 
-export const ImageGalleryItem = ({ types }) => {
+export const ImageGalleryItem = ({ image }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const { webformatURL, tags, largeImageURL } = types;
+  const { webformatURL, tags, largeImageURL } = image;
 
   const handleToggleModal = () => {
     setIsModalOpen(prevState => !prevState);
