@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { AppContainer } from './App.styled';
 import { fetchImages } from 'Services/api.Services';
 import { Searchbar } from './Searchbar/Searchbar';
@@ -8,27 +8,21 @@ import { Loader } from './Loader/Loader';
 import toast, { Toaster } from 'react-hot-toast';
 import { Notification } from './ErrorMessage/ErrorMessage';
 
-export class App extends Component {
-  state = {
-    query: '',
-    page: 1,
-    images: [],
-    isLoading: false,
-    totalImages: 0,
-    error: null,
-  };
+export const App = () => {
+  const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [images, setImages] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [totalImages, setTotalImages] = useState(0);
+  const [error, setError] = useState(null);
 
-  async componentDidUpdate(_, prevState) {
-    const { query, page } = this.state;
-    if (prevState.query !== query || prevState.page !== page) {
+  useEffect(() => {
+    async function fetchImage() {
       try {
         const resp = await fetchImages(query, page);
         if (resp) {
-          this.setState(prev => ({
-            images:
-              page === 1 ? [...resp.hits] : [...prev.images, ...resp.hits],
-            totalImages: resp.totalHits,
-          }));
+          setImages(prev => page === 1 ? [...resp.hits] : [...prev, ...resp.hits]);
+          setTotalImages(resp.totalHits);
 
           if (!resp.totalHits) {
             toast.error(
@@ -41,45 +35,45 @@ export class App extends Component {
           }
         }
       } catch (error) {
-        this.setState({ error });
+        setError(error);
       } finally {
-        this.setState({ isLoading: false });
+        setIsLoading(false);
       }
     }
-  }
+    if (query) {
+      fetchImage();
+    }
+  }, [query, page]);
 
-  handelSubmit = query => {
+  const handelSubmit = query => {
     console.log(query);
-    this.setState({ query, isLoading: true, page: 1 });
+    setQuery(query);
+    setIsLoading(true);
+    setPage(1);
   };
 
-  handleLoadMore = () => {
-    this.setState(prevState => ({ page: prevState.page + 1, isLoading: true }));
+  const handleLoadMore = () => {
+    setPage(prevState => prevState + 1);
+    setIsLoading(true);
   };
 
-  renderButtonOrLoader = () => {
-    const { isLoading, images, totalImages } = this.state;
+  const renderButtonOrLoader = () => {
     return isLoading ? (
       <Loader />
     ) : (
       !!images.length && images.length < totalImages && (
-        <Button onLoadMore={this.handleLoadMore} />
+        <Button onLoadMore={handleLoadMore} />
       )
     );
   };
 
-  render() {
-    const { images, error } = this.state;
-    return (
-      <AppContainer>
-        <Searchbar onSubmit={this.handelSubmit} />
-        {error && <Notification />}
-
-        <ImageGallery images={images} />
-
-        {this.renderButtonOrLoader()}
-        <Toaster position="top-center" reverseOrder={true} />
-      </AppContainer>
-    );
-  }
-}
+  return (
+    <AppContainer>
+      <Searchbar onSubmit={handelSubmit} />
+      {error && <Notification />}
+      <ImageGallery images={images} />
+      {renderButtonOrLoader()}
+      <Toaster position="top-center" reverseOrder={true} />
+    </AppContainer>
+  );
+};
